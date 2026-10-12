@@ -49,28 +49,39 @@ const MODES=[
 {id:"sub10",label:"Subtraction within 10",note:"Positive answers · numbers up to 10",stars:2,op:"−",limit:10},
 {id:"sub20",label:"Subtraction within 20",note:"Positive answers · numbers up to 20",stars:3,op:"−",limit:20},
 {id:"add20",label:"Addition within 20",note:"The total is 20 or less",stars:3,op:"+",limit:20},
-{id:"missing10",label:"Find the missing number · 10",note:"Fill the blank in an addition",stars:3,op:"?",limit:10},
-{id:"mixed20",label:"Mixed + and − within 20",note:"A little challenge!",stars:4,op:"mixed",limit:20}
+{id:"missing10",label:"Find the missing number · 10",note:"Fill the blank in an addition",stars:3,op:"+",limit:10},
+{id:"missingAdd20",label:"Missing number · Addition 20",note:"? + 7 = 15 or 8 + ? = 15",stars:3,op:"+",limit:20},
+{id:"missingSub10",label:"Missing number · Subtraction 10",note:"? − 3 = 5 or 8 − ? = 5",stars:3,op:"−",limit:10},
+{id:"missingSub20",label:"Missing number · Subtraction 20",note:"? − 6 = 9 or 15 − ? = 9",stars:4,op:"−",limit:20},
+{id:"bridgeAdd",label:"Addition across 10",note:"Add two numbers and cross 10",stars:3,op:"+",limit:20},
+{id:"bridgeSub",label:"Subtraction across 10",note:"Subtract from 11–20 and cross 10",stars:4,op:"−",limit:20},
+{id:"doubles",label:"Doubles & near doubles",note:"6 + 6 or 7 + 8",stars:2,op:"+",limit:20},
+{id:"mixed20",label:"Mixed + and − within 20",note:"A little challenge!",stars:4,op:"mixed",limit:20},
+{id:"missingMixed20",label:"Mixed missing numbers · 20",note:"Find the missing number in + or −",stars:4,op:"mixed",limit:20}
 ];
 const modeById=id=>MODES.find(m=>m.id===id)||MODES[2];
 const rand=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
 function makeProblems(modeId){
 const mode=modeById(modeId),pool=[],seen=new Set();
 for(let a=0;a<=20;a++)for(let b=0;b<=20;b++){
-let op=mode.op;if(op==="mixed")op=(a+b)%2===0?"+":"−";
-if(modeId==="add10"&&!(a>=1&&a<=9&&b>=1&&b<=9))continue;
-if(modeId==="sum10"&&!(a>=1&&b>=1&&a+b<=10))continue;
-if(modeId==="sum20"&&!(a>=1&&b>=1&&a+b<20))continue;
-if(modeId==="add20"&&!(a>=1&&b>=1&&a+b<=20))continue;
-if(modeId==="sub10"&&!(a<=10&&a>b&&b>=1))continue;
-if(modeId==="sub20"&&!(a<=20&&a>b&&b>=1))continue;
-if(modeId==="missing10"&&!(a>=1&&b>=1&&a+b<=10))continue;
-if(modeId==="mixed20"&&!(op==="+"?a>=1&&b>=1&&a+b<=20:a<=20&&a>b&&b>=1))continue;
-let questionOp=modeId==="missing10"?"+":op;
-let missing=modeId==="missing10"?(a+b)%2===0?"left":"right":null;
-let key=questionOp==="+"&&modeId!=="missing10"?[a,b].sort((x,y)=>x-y).join(","):a+","+b+","+missing+","+questionOp;
-if(seen.has(key))continue;seen.add(key);
-pool.push({a,b,op:questionOp,missing,answer:"",status:""});
+let op=mode.op;
+if(op==="mixed")op=(a+b)%2===0?"+":"−";
+const isAddition=op==="+";
+const limit=mode.limit||20;
+if(isAddition&&!(a>=1&&b>=1&&a+b<=limit))continue;
+if(!isAddition&&!(a<=limit&&a>b&&b>=1))continue;
+if(modeId==="add10"&&!(a<=9&&b<=9))continue;
+if(modeId==="sum20"&&a+b>=20)continue;
+if(modeId==="bridgeAdd"&&!(a<10&&b<10&&a+b>10))continue;
+if(modeId==="bridgeSub"&&!(a>=11&&a<=20&&a-b<10))continue;
+if(modeId==="doubles"&&Math.abs(a-b)>1)continue;
+if(modeId==="missing10"&&a+b>10)continue;
+if(modeId==="missingSub10"&&a>10)continue;
+const hasMissing=["missing10","missingAdd20","missingSub10","missingSub20","missingMixed20"].includes(modeId);
+const missing=hasMissing?(a+b)%2===0?"left":"right":null;
+const key=isAddition&&!hasMissing?[a,b].sort((x,y)=>x-y).join(","):a+","+b+","+missing+","+op;
+if(seen.has(key))continue;
+seen.add(key);pool.push({a,b,op,missing,answer:"",status:""});
 }
 for(let i=pool.length-1;i>0;i--){const j=rand(0,i);[pool[i],pool[j]]=[pool[j],pool[i]];}
 return pool.slice(0,20);
@@ -85,7 +96,7 @@ let state=load(),active=-1,celebrationTimer=null;
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}};
 const filled=p=>/^\d{1,2}$/.test(p.answer);
 const correctValue=p=>p.missing==="left"?p.a:p.missing==="right"?p.b:p.op==="−"?p.a-p.b:p.a+p.b;
-const expression=p=>p.missing==="left"?"? + "+p.b+" = "+(p.a+p.b):p.missing==="right"?p.a+" + ? = "+(p.a+p.b):p.a+" "+p.op+" "+p.b+" = ?";
+const expression=p=>(p.missing==="left"?"?":p.a)+" "+p.op+" "+(p.missing==="right"?"?":p.b)+" = "+(p.missing?(p.op==="−"?p.a-p.b:p.a+p.b):"?");
 function menu(){const el=$("mode-menu");el.innerHTML="";MODES.forEach(m=>{const btn=document.createElement("button");btn.type="button";btn.className="mode-choice"+(m.id===state.mode?" selected":"");btn.innerHTML='<span><strong>'+m.label+'</strong><small>'+m.note+'</small></span><span class="difficulty" aria-label="'+m.stars+' out of 4 difficulty stars">'+"★".repeat(m.stars)+'<span class="off">'+"☆".repeat(4-m.stars)+"</span></span>";btn.addEventListener("click",()=>switchMode(m.id));el.append(btn);});$("mode-trigger").textContent=modeById(state.mode).label.toUpperCase()+" ▾";}
 function toggleMenu(force){const open=typeof force==="boolean"?force:$("mode-menu").hidden;$("mode-menu").hidden=!open;$("mode-trigger").setAttribute("aria-expanded",String(open));}
 function switchMode(id){toggleMenu(false);if(id===state.mode)return;if(state.problems.some(filled)&&!confirm("Switch levels? Your current answers will be replaced."))return;state={mode:id,checked:false,problems:makeProblems(id)};render();}
@@ -96,7 +107,7 @@ $("progress-percent").textContent=Math.round((state.checked?right:done)/20*100)+
 $("progress-fill").style.width=(state.checked?right:done)/20*100+"%";
 $("summary-note").textContent=state.checked?wrong+" to retry":"Tap a card to begin";
 $("cards").innerHTML="";
-state.problems.forEach((p,i)=>{const btn=document.createElement("button");btn.type="button";btn.className="problem-card"+(p.status?" "+p.status:filled(p)?" answered":"")+(active===i?" active":"");const badge=p.status==="correct"?"✓ Correct":p.status==="wrong"?"✕ Try again":filled(p)?"● Answered":"○ Not started";btn.innerHTML='<span class="number">NO. '+String(i+1).padStart(2,"0")+'</span><span class="mini">'+(filled(p)?expression(p).replace("?",p.answer):"? "+p.op+" ? = ?")+'</span><span class="status">'+badge+'</span>';btn.setAttribute("aria-label","Problem "+(i+1)+", "+(p.status==="correct"?"correct":p.status==="wrong"?"incorrect, try again":filled(p)?"answered":"not started"));btn.addEventListener("click",()=>open(i));$("cards").append(btn);});
+state.problems.forEach((p,i)=>{const btn=document.createElement("button");btn.type="button";btn.className="problem-card"+(p.status?" "+p.status:filled(p)?" answered":"")+(active===i?" active":"");const badge=p.status==="correct"?"✓ Correct":p.status==="wrong"?"✕ Try again":filled(p)?"● Answered":"○ Not started";btn.innerHTML='<span class="number">NO. '+String(i+1).padStart(2,"0")+'</span><span class="mini">'+(filled(p)?expression(p).replace("?",p.answer) :expression(p))+'</span><span class="status">'+badge+'</span>';btn.setAttribute("aria-label","Problem "+(i+1)+", "+(p.status==="correct"?"correct":p.status==="wrong"?"incorrect, try again":filled(p)?"answered":"not started"));btn.addEventListener("click",()=>open(i));$("cards").append(btn);});
 const canCheck=done===20&&(!state.checked||wrong>0);$("check").hidden=!canCheck;$("check").textContent=state.checked?"Check Again →":"Check Answers →";
 $("submit-hint").textContent=state.checked?(wrong?"Correct the pink cards, then check again.":"All problems have been checked."):(done===20?"You answered all 20! Ready to check?":"Answer all 20 problems to unlock Check Answers.");
 $("results").classList.toggle("show",state.checked);
@@ -108,7 +119,7 @@ $("operator").textContent=p.op;
 if(p.missing){$("operand-a").textContent=p.missing==="left"?"?":p.a;$("operand-b").textContent=p.missing==="right"?"?":p.b;$("answer-display").textContent=p.a+p.b;document.querySelector(".equation").classList.add("missing-mode");}
 else{$("operand-a").textContent=p.a;$("operand-b").textContent=p.b;document.querySelector(".equation").classList.remove("missing-mode");}
 $("prev").disabled=i===0;$("next").disabled=i===19;updateDialog();render();}
-function updateDialog(){if(active<0)return;const p=state.problems[active];const display=$("answer-display");if(p.missing){$(p.missing==="left"?"operand-a":"operand-b").textContent=p.answer||"?";display.textContent=p.a+p.b;}else display.textContent=p.answer||"?";display.classList.toggle("empty",!p.answer&&!p.missing);
+function updateDialog(){if(active<0)return;const p=state.problems[active];const display=$("answer-display");if(p.missing){$(p.missing==="left"?"operand-a":"operand-b").textContent=p.answer||"?";display.textContent=p.op==="−"?p.a-p.b:p.a+p.b;}else display.textContent=p.answer||"?";display.classList.toggle("empty",!p.answer&&!p.missing);
 $("dialog-help").textContent=p.status==="correct"?"You got this one right!":p.status==="wrong"?"Try another answer!":"Tap the number keys to enter your answer";$("feedback").hidden=p.status!=="correct";if(p.status==="correct"){$("feedback").className="feedback ok";$("feedback").textContent="✓ Correct! Great job!";}}
 function close(){active=-1;$("overlay").classList.remove("open");$("overlay").setAttribute("aria-hidden","true");render();}
 function enter(k){if(active<0)return;const p=state.problems[active];if(k==="next"){if(!filled(p)){$("dialog-help").textContent="Enter your answer first.";return;}if(active<19)open(active+1);else close();return;}if(p.status==="correct")return;if(k==="del")p.answer=p.answer.slice(0,-1);else if(/^\d$/.test(k)){if(p.answer.length>=2)return;p.answer=(p.answer+k).replace(/^0+(?=\d)/,"");}if(p.status==="wrong")p.status="";updateDialog();render();}
