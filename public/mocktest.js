@@ -50,7 +50,14 @@ header.append(desc);
 const side=document.createElement("div");side.className="mock-header-side";
 const board=document.createElement("div");board.className="mock-score";board.innerHTML="<strong>"+score+" / 25</strong><small>Correct answers</small><span>"+done+" checked</span>";side.append(board);
 const selector=document.createElement("select");selector.id="mocktest-picker";selector.className="mock-picker";selector.setAttribute("aria-label","Choose a mocktest");
-examList.forEach(t=>{const o=document.createElement("option");o.value=t.id;o.textContent=t.title;selector.append(o);});selector.value=selected;selector.onchange=()=>{selected=selector.value;save();render();};side.append(selector);header.append(side);root.append(header);
+examList.forEach(t=>{const o=document.createElement("option");o.value=t.id;o.textContent=t.title;selector.append(o);});selector.value=selected;selector.onchange=()=>{selected=selector.value;save();render();};side.append(selector);
+const clear=document.createElement("button");clear.type="button";clear.className="mock-clear";clear.textContent="Clear Answers";
+clear.addEventListener("click",()=>{
+const message=window.SiteI18n?.translate("Clear answers for this test? All 25 responses and checked results will be deleted.")||"Clear answers for this test? All 25 responses and checked results will be deleted.";
+if(!confirm(message))return;
+histories[selected]={answers:{},checked:{}};save();render();
+});
+side.append(clear);header.append(side);root.append(header);
 const grid=document.createElement("div");grid.className="mock-grid";
 exam.questions.forEach((q,i)=>{
 const response=state.answers[i],graded=!!state.checked[i],correct=graded&&isCorrect(q,response);
@@ -69,7 +76,7 @@ const input=document.createElement("input");input.className="mock-input";input.t
 }
 const foot=document.createElement("div");foot.className="mock-foot";const status=document.createElement("span");status.textContent=graded?(correct?"✓ Great job!":q.answer==null?"Answer needs verification":"✕ Try again!"):"Choose an answer";foot.append(status);
 const btn=document.createElement("button");btn.type="button";btn.className="mock-check";btn.textContent=correct?"Correct ✓":"Check answer";btn.disabled=correct||q.answer==null||(exam.type==="choice"?response===undefined:!String(response||"").trim());btn.onclick=()=>{state.checked[i]=true;save();render();};foot.append(btn);card.append(foot);grid.append(card);
-});root.append(grid);save();
+});root.append(grid);save();window.SiteI18n?.apply(root);
 }
 window.MathMocktest={render};
 })();
