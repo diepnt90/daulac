@@ -75,7 +75,17 @@ const choices=document.createElement("div");choices.className="mock-choices";
 const input=document.createElement("input");input.className="mock-input";input.type="text";input.autocomplete="off";input.placeholder="Type your answer";input.value=response||"";input.disabled=correct;input.setAttribute("aria-label","Answer for question "+(i+1));input.oninput=()=>{state.answers[i]=input.value;state.checked[i]=false;const checkButton=card.querySelector(".mock-check");if(checkButton)checkButton.disabled=!input.value.trim()||q.answer==null;save();};card.append(input);
 }
 const foot=document.createElement("div");foot.className="mock-foot";const status=document.createElement("span");status.textContent=graded?(correct?"✓ Great job!":q.answer==null?"Answer needs verification":"✕ Try again!"):"Choose an answer";foot.append(status);
-const btn=document.createElement("button");btn.type="button";btn.className="mock-check";btn.textContent=correct?"Correct ✓":"Check answer";btn.disabled=correct||q.answer==null||(exam.type==="choice"?response===undefined:!String(response||"").trim());btn.onclick=()=>{state.checked[i]=true;save();render();};foot.append(btn);card.append(foot);grid.append(card);
+const btn=document.createElement("button");btn.type="button";btn.className="mock-check";btn.textContent=correct?"Correct ✓":"Check answer";btn.disabled=correct||q.answer==null||(exam.type==="choice"?response===undefined:!String(response||"").trim());btn.onclick=()=>{
+state.checked[i]=true;
+const isRight=isCorrect(q,state.answers[i]);
+save();render();
+const vi=window.SiteI18n?.language==="vi";
+window.showMathCelebration?.(
+ isRight,isRight?1:0,1,
+ isRight?(vi?"Giỏi lắm!":"Great job!"):(vi?"Cố lên nhé!":"Keep trying!"),
+ isRight?(vi?"Con đã làm đúng câu này rồi!":"You got this question right!"):(vi?"Câu này chưa đúng. Con thử lại nhé!":"This answer is not correct yet. Try again!")
+);
+};foot.append(btn);card.append(foot);grid.append(card);
 });root.append(grid);save();window.SiteI18n?.apply(root);
 }
 window.MathMocktest={render};
