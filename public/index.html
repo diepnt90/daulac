@@ -99,7 +99,7 @@ let state=load(),active=-1,celebrationTimer=null;
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}};
 const DAILY_KEY="little-math-garden-daily-v1";
 function dateKey(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
-function loadDaily(){try{const x=JSON.parse(localStorage.getItem(DAILY_KEY));return Array.isArray(x)?[...new Set(x.filter(v=>typeof v==="string"&&/^\\d{4}-\\d{2}-\\d{2}$/.test(v)))]:[];}catch(e){return [];}}
+function loadDaily(){try{const x=JSON.parse(localStorage.getItem(DAILY_KEY));return Array.isArray(x)?[...new Set(x.filter(v=>typeof v==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(v)))]:[];}catch(e){return [];}}
 function markDaily(){const days=loadDaily(),today=dateKey(new Date());if(!days.includes(today)){days.push(today);try{localStorage.setItem(DAILY_KEY,JSON.stringify(days));}catch(e){}}}
 function renderDaily(){
  const days=loadDaily(),done=new Set(days),today=new Date();today.setHours(12,0,0,0);
