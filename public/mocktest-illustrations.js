@@ -23,9 +23,10 @@ const type=/(people|students|children|boys|girls|family)/.test(l)?"🧒":/(penci
 if(!prompt){prompt=ans!==null?"Find the missing value shown in the picture.":"Find the missing shape or letter.";adapted=true;}
 if(/heaviest|lightest/.test(l)&&/balance|figure|picture/.test(l)){
  const v=String(target||q.answer||"D").match(/\b[A-D]\b/)?.[0]||String(q.answer||"A");
- visual=balance(null,null,null,v);adapted=true;
- prompt=/heaviest/.test(l)?"Which labeled object is the heaviest?":"Which labeled object is the lightest?";
- visual+=row(["A","B","C","D"].map((x,j)=>chip(x+" "+(x===v?(/lightest/.test(l)?"⚖️":"🏋️"):"◻️"))));
+ const light=/lightest/.test(l);
+ visual='<div class="drawing-weights">'+["A","B","C","D"].map((x,j)=>{const weight=x===v?(light?1:4):(light?2+j%2:1+j%2);return '<div class="drawing-weight"><strong>'+x+'</strong><span>'+("🟩".repeat(weight))+'</span><small>'+weight+' kg</small></div>';}).join("")+"</div>";
+ adapted=true;
+ prompt=light?"Which labeled object is the lightest?":"Which labeled object is the heaviest?";
 }else if(/pattern|come next|next letter|space provided|missing (figure|sticker|shape)/.test(l)){
  visual=pattern(ans!==null?ans:target, i);adapted=true;
  if(!target||target==="A"||target==="B"||target==="C"||target==="D"){
