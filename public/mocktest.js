@@ -39,7 +39,7 @@ const letters=["A","B","C","D"];
 const save=()=>{try{localStorage.setItem(K,JSON.stringify({selected,histories}));}catch(e){}};
 function activeExam(){return examList.find(x=>x.id===selected)||examList[0];}
 function history(){return histories[selected]||(histories[selected]={answers:{},checked:{}});}
-function normalize(v){return String(v??"").trim().replace(/\s+/g," ").toLowerCase();}
+function normalize(v){return String(v??"").trim().replace(/[–−]/g,"-").replace(/\s+/g,"").toLowerCase();}
 function isCorrect(q,a){return q.answer!==null&&q.answer!==undefined&&normalize(a)===normalize(q.answer);}
 function render(){
 root.replaceChildren();
@@ -65,10 +65,10 @@ if(exam.type==="choice"){
 const choices=document.createElement("div");choices.className="mock-choices";
 (drawing?.options||q.options||["A","B","C","D"]).forEach((opt,j)=>{const b=document.createElement("button");b.type="button";b.className="mock-option"+(response===letters[j]?" selected":"");const key=document.createElement("b");key.textContent=letters[j]+" ";b.append(key,document.createTextNode(opt||"See figure"));b.disabled=correct;b.setAttribute("aria-pressed",String(response===letters[j]));b.onclick=()=>{state.answers[i]=letters[j];state.checked[i]=false;save();render();};choices.append(b);});card.append(choices);
 }else{
-const input=document.createElement("input");input.className="mock-input";input.type="text";input.autocomplete="off";input.placeholder="Type your answer";input.value=response||"";input.disabled=correct;input.setAttribute("aria-label","Answer for question "+(i+1));input.oninput=()=>{state.answers[i]=input.value;state.checked[i]=false;save();};card.append(input);
+const input=document.createElement("input");input.className="mock-input";input.type="text";input.autocomplete="off";input.placeholder="Type your answer";input.value=response||"";input.disabled=correct;input.setAttribute("aria-label","Answer for question "+(i+1));input.oninput=()=>{state.answers[i]=input.value;state.checked[i]=false;const checkButton=card.querySelector(".mock-check");if(checkButton)checkButton.disabled=!input.value.trim()||q.answer==null;save();};card.append(input);
 }
 const foot=document.createElement("div");foot.className="mock-foot";const status=document.createElement("span");status.textContent=graded?(correct?"✓ Great job!":q.answer==null?"Answer needs verification":"✕ Try again!"):"Choose an answer";foot.append(status);
-const btn=document.createElement("button");btn.type="button";btn.className="mock-check";btn.textContent=correct?"Correct ✓":"Check answer";btn.disabled=correct||q.answer==null||(exam.type==="choice"?response===undefined:!response);btn.onclick=()=>{state.checked[i]=true;save();render();};foot.append(btn);card.append(foot);grid.append(card);
+const btn=document.createElement("button");btn.type="button";btn.className="mock-check";btn.textContent=correct?"Correct ✓":"Check answer";btn.disabled=correct||q.answer==null||(exam.type==="choice"?response===undefined:!String(response||"").trim());btn.onclick=()=>{state.checked[i]=true;save();render();};foot.append(btn);card.append(foot);grid.append(card);
 });root.append(grid);save();
 }
 window.MathMocktest={render};
