@@ -56,12 +56,14 @@ exam.questions.forEach((q,i)=>{
 const response=state.answers[i],graded=!!state.checked[i],correct=graded&&isCorrect(q,response);
 const card=document.createElement("article");card.className="mock-card"+(graded?(correct?" passed":" failed"):"");
 const title=document.createElement("div");title.className="mock-card-top";title.innerHTML="<span>QUESTION "+String(i+1).padStart(2,"0")+"</span><small>"+q.topic+"</small>";card.append(title);
-const prompt=document.createElement("h3");prompt.textContent=q.prompt;card.append(prompt);
+const drawing=(selected==="practice"||!window.MockIllustrations)?null:window.MockIllustrations.render(q,i,selected);
+const prompt=document.createElement("h3");prompt.textContent=drawing?.prompt||q.prompt||"Look at the figure and answer.";card.append(prompt);
 if(q.visual){const visual=document.createElement("div");visual.className="mock-visual";visual.textContent=q.visual;card.append(visual);}
-if(q.visualRequired){const note=document.createElement("p");note.className="mock-source-note";note.textContent="Illustration in the source book · PDF page "+q.page+". Picture-based questions need the original diagram to solve correctly.";card.append(note);}
+if(drawing?.html){const picture=document.createElement("div");picture.className="mock-drawing";picture.innerHTML=drawing.html;card.append(picture);if(drawing.adapted){const note=document.createElement("p");note.className="mock-adapted-note";note.textContent="Practice illustration · adapted from the source question";card.append(note);}}
+else if(q.visualRequired){const note=document.createElement("p");note.className="mock-source-note";note.textContent="This question needs a clearer diagram · source PDF page "+q.page;card.append(note);}
 if(exam.type==="choice"){
 const choices=document.createElement("div");choices.className="mock-choices";
-(q.options||["A","B","C","D"]).forEach((opt,j)=>{const b=document.createElement("button");b.type="button";b.className="mock-option"+(response===letters[j]?" selected":"");const key=document.createElement("b");key.textContent=letters[j]+" ";b.append(key,document.createTextNode(opt||"See figure"));b.disabled=correct;b.setAttribute("aria-pressed",String(response===letters[j]));b.onclick=()=>{state.answers[i]=letters[j];state.checked[i]=false;save();render();};choices.append(b);});card.append(choices);
+(drawing?.options||q.options||["A","B","C","D"]).forEach((opt,j)=>{const b=document.createElement("button");b.type="button";b.className="mock-option"+(response===letters[j]?" selected":"");const key=document.createElement("b");key.textContent=letters[j]+" ";b.append(key,document.createTextNode(opt||"See figure"));b.disabled=correct;b.setAttribute("aria-pressed",String(response===letters[j]));b.onclick=()=>{state.answers[i]=letters[j];state.checked[i]=false;save();render();};choices.append(b);});card.append(choices);
 }else{
 const input=document.createElement("input");input.className="mock-input";input.type="text";input.autocomplete="off";input.placeholder="Type your answer";input.value=response||"";input.disabled=correct;input.setAttribute("aria-label","Answer for question "+(i+1));input.oninput=()=>{state.answers[i]=input.value;state.checked[i]=false;save();};card.append(input);
 }
