@@ -27,29 +27,47 @@ const questions=[
 ["Combinatorics","Which is the second-largest number?","18, 25, 20, 34, 7, 12",["34","20","25","18"],2],
 ["Combinatorics","Make the smallest 3-digit number using 1, 4, 2 and 6 without repeats.","1　4　2　6",["124","214","111","142"],0]
 ];
-const K="little-math-mocktest-v1";
-let stored={};try{stored=JSON.parse(localStorage.getItem(K))||{};}catch(e){}
-const answers=Array.isArray(stored.answers)?stored.answers.slice(0,25):[];
-const checked=Array.isArray(stored.checked)?stored.checked.slice(0,25):[];
-const save=()=>{try{localStorage.setItem(K,JSON.stringify({answers,checked}));}catch(e){}};
+
+const K="little-math-mocktest-v2";
+const sourceTests=Array.isArray(window.TimoBookTests)?window.TimoBookTests:[];
+const examList=[{id:"practice",title:"Practice Mocktest · 2025",type:"choice",questions:questions.map(q=>({topic:q[0],prompt:q[1],visual:q[2],options:q[3],answer:["A","B","C","D"][q[4]],visualRequired:false}))},...sourceTests];
 const root=document.getElementById("mocktest-section");
+let saved={};try{saved=JSON.parse(localStorage.getItem(K))||{};}catch(e){}
+let selected=examList.some(x=>x.id===saved.selected)?saved.selected:"practice";
+const histories=saved.histories&&typeof saved.histories==="object"?saved.histories:{};
 const letters=["A","B","C","D"];
+const save=()=>{try{localStorage.setItem(K,JSON.stringify({selected,histories}));}catch(e){}};
+function activeExam(){return examList.find(x=>x.id===selected)||examList[0];}
+function history(){return histories[selected]||(histories[selected]={answers:{},checked:{}});}
+function normalize(v){return String(v??"").trim().replace(/\s+/g," ").toLowerCase();}
+function isCorrect(q,a){return q.answer!==null&&q.answer!==undefined&&normalize(a)===normalize(q.answer);}
 function render(){
 root.replaceChildren();
-const top=document.createElement("div");top.className="mock-header";
-const done=checked.filter(Boolean).length,score=checked.reduce((n,c,i)=>n+(c&&answers[i]===questions[i][4]?1:0),0);
-top.innerHTML='<div><p class="eyebrow">PRACTICE EXAM · 25 QUESTIONS</p><h2>Mocktest Adventure ★★★★</h2><p>Choose A, B, C or D, then tap <b>Check</b> on each card. Keep trying until you get it right!</p></div><div class="mock-score"><strong>'+score+' / 25</strong><small>Correct answers</small><span>'+done+' checked</span></div>';root.append(top);
+const exam=activeExam(),state=history(),done=exam.questions.filter((q,i)=>state.checked[i]).length,score=exam.questions.filter((q,i)=>state.checked[i]&&isCorrect(q,state.answers[i])).length;
+const header=document.createElement("div");header.className="mock-header";
+const desc=document.createElement("div");desc.innerHTML='<p class="eyebrow">MATH MOCKTEST · 25 QUESTIONS</p><h2>Mocktest Adventure ★★★★</h2><p>Check each card as you go. Choose a test to practice!</p>';
+header.append(desc);
+const side=document.createElement("div");side.className="mock-header-side";
+const board=document.createElement("div");board.className="mock-score";board.innerHTML="<strong>"+score+" / 25</strong><small>Correct answers</small><span>"+done+" checked</span>";side.append(board);
+const selector=document.createElement("select");selector.id="mocktest-picker";selector.className="mock-picker";selector.setAttribute("aria-label","Choose a mocktest");
+examList.forEach(t=>{const o=document.createElement("option");o.value=t.id;o.textContent=t.title;selector.append(o);});selector.value=selected;selector.onchange=()=>{selected=selector.value;save();render();};side.append(selector);header.append(side);root.append(header);
 const grid=document.createElement("div");grid.className="mock-grid";
-questions.forEach((q,i)=>{
-const card=document.createElement("article");card.className="mock-card"+(checked[i]&&answers[i]===q[4]?" passed":checked[i]?" failed":"");
-const title=document.createElement("div");title.className="mock-card-top";title.innerHTML='<span>QUESTION '+String(i+1).padStart(2,"0")+'</span><small>'+q[0]+'</small>';card.append(title);
-const prompt=document.createElement("h3");prompt.textContent=q[1];card.append(prompt);
-const visual=document.createElement("div");visual.className="mock-visual";visual.textContent=q[2];card.append(visual);
+exam.questions.forEach((q,i)=>{
+const response=state.answers[i],graded=!!state.checked[i],correct=graded&&isCorrect(q,response);
+const card=document.createElement("article");card.className="mock-card"+(graded?(correct?" passed":" failed"):"");
+const title=document.createElement("div");title.className="mock-card-top";title.innerHTML="<span>QUESTION "+String(i+1).padStart(2,"0")+"</span><small>"+q.topic+"</small>";card.append(title);
+const prompt=document.createElement("h3");prompt.textContent=q.prompt;card.append(prompt);
+if(q.visual){const visual=document.createElement("div");visual.className="mock-visual";visual.textContent=q.visual;card.append(visual);}
+if(q.visualRequired){const note=document.createElement("p");note.className="mock-source-note";note.textContent="Illustration in the source book · PDF page "+q.page+". Picture-based questions need the original diagram to solve correctly.";card.append(note);}
+if(exam.type==="choice"){
 const choices=document.createElement("div");choices.className="mock-choices";
-q[3].forEach((opt,j)=>{const b=document.createElement("button");b.type="button";b.className="mock-option"+(answers[i]===j?" selected":"");b.innerHTML="<b>"+letters[j]+"</b> ";b.append(document.createTextNode(opt));b.disabled=checked[i]&&answers[i]===q[4];b.setAttribute("aria-pressed",String(answers[i]===j));b.onclick=()=>{answers[i]=j;checked[i]=false;save();render();};choices.append(b);});card.append(choices);
-const foot=document.createElement("div");foot.className="mock-foot";const status=document.createElement("span");status.textContent=checked[i]?(answers[i]===q[4]?"✓ Great job!":"✕ Try again!"):"Choose an answer";foot.append(status);
-const btn=document.createElement("button");btn.type="button";btn.className="mock-check";btn.textContent=checked[i]&&answers[i]===q[4]?"Correct ✓":"Check answer";btn.disabled=answers[i]===undefined||(checked[i]&&answers[i]===q[4]);btn.onclick=()=>{checked[i]=true;save();render();};foot.append(btn);card.append(foot);grid.append(card);
-});root.append(grid);
+(q.options||["A","B","C","D"]).forEach((opt,j)=>{const b=document.createElement("button");b.type="button";b.className="mock-option"+(response===letters[j]?" selected":"");const key=document.createElement("b");key.textContent=letters[j]+" ";b.append(key,document.createTextNode(opt||"See figure"));b.disabled=correct;b.setAttribute("aria-pressed",String(response===letters[j]));b.onclick=()=>{state.answers[i]=letters[j];state.checked[i]=false;save();render();};choices.append(b);});card.append(choices);
+}else{
+const input=document.createElement("input");input.className="mock-input";input.type="text";input.autocomplete="off";input.placeholder="Type your answer";input.value=response||"";input.disabled=correct;input.setAttribute("aria-label","Answer for question "+(i+1));input.oninput=()=>{state.answers[i]=input.value;state.checked[i]=false;save();};card.append(input);
+}
+const foot=document.createElement("div");foot.className="mock-foot";const status=document.createElement("span");status.textContent=graded?(correct?"✓ Great job!":q.answer==null?"Answer needs verification":"✕ Try again!"):"Choose an answer";foot.append(status);
+const btn=document.createElement("button");btn.type="button";btn.className="mock-check";btn.textContent=correct?"Correct ✓":"Check answer";btn.disabled=correct||q.answer==null||(exam.type==="choice"?response===undefined:!response);btn.onclick=()=>{state.checked[i]=true;save();render();};foot.append(btn);card.append(foot);grid.append(card);
+});root.append(grid);save();
 }
 window.MathMocktest={render};
 })();
