@@ -13,6 +13,7 @@ function polygon(sides){sides=Math.max(3,Math.min(10,sides||5));const pts=Array.
 function pattern(target,seed){const n=number(target);if(n!==null){const step=seed%3+1;return row([n-3*step,n-2*step,n-step,"?"].map(v=>chip(v)));}
 if(/^[A-Z]$/.test(String(target))) {const idx=target.charCodeAt(0)-65;return row([3,2,1].map(k=>chip(String.fromCharCode(65+(idx+26-k)%26))).concat(chip("?")));}
 return row(["🔵","🟠","🔵","🟠","❓"].map(chip));}
+function examType(id){return id.startsWith("heat")?"entry":"choice";}
 function render(q,i,testId){
 const p=String(q.prompt||""),l=p.toLowerCase(),target=solveChoice(q),n=number(target),an=number(q.answer);
 let prompt=p.replace(/^\s*\d+\.\s*/,"").trim(),visual="",adapted=false, note="";
@@ -30,7 +31,7 @@ if(/heaviest|lightest/.test(l)&&/balance|figure|picture/.test(l)){
  if(!target||target==="A"||target==="B"||target==="C"||target==="D"){
  const symbols=["🍎","🍊","🍇","🍌"];const correctIndex="ABCD".indexOf(String(q.answer));const winning=symbols[(i+3)%4];
  visual=row([symbols[i%4],winning,symbols[i%4],winning,"?"].map(chip));
- if(q.options?.every(v=>/^[A-D]$/.test(v))) { const opts=symbols.slice();opts[correctIndex]=winning;for(let j=0;j<4;j++){if(j!==correctIndex&&opts[j]===winning)opts[j]=symbols[(j+2)%4]};return {html:visual,prompt:"Which fruit comes next in the pattern?",options:opts,adapted:true};}
+ if(q.options?.every(v=>/^[A-D]$/.test(v))) { const opts=Array.from({length:4},(_,j)=>j===correctIndex?winning:symbols.filter(x=>x!==winning)[(j+(j>=correctIndex?-1:0))%3]);return {html:visual,prompt:"Which fruit comes next in the pattern?",options:opts,adapted:true};}
  }
 }else if(/how many sides|number of sides|sides are there/.test(l)&&ans!==null) {
  visual=polygon(ans);adapted=true;prompt="How many sides does this shape have?";
@@ -51,8 +52,15 @@ if(/heaviest|lightest/.test(l)&&/balance|figure|picture/.test(l)){
  else if(q.answer&&q.answer!=="Even"&&q.answer!=="Odd"){visual=row([chip("◯"),chip("△"),chip("□"),chip("?")]);note="Visual reasoning practice; refer to the question and choices.";adapted=true;}
 }
 if(!visual){if(type&&counting)visual=items(type,Math.min(8,ans||5));else if(/clock|time/.test(l))visual=row(["🕒","→","❓"].map(chip));else if(/odd|even/.test(l))visual=row([2,3,4,5,6,7].map(chip));else if(/number|digit/.test(l))visual=row([1,2,3,4,5].map(chip));else if(/shape|figure/.test(l))visual=row(["▲","●","■","★"].map(chip));}
-if(!visual)return null;
-return {html:visual,prompt,adapted,options:null,note};
+if(!visual&&q.visualRequired){
+ adapted=true;
+ if(ans!==null&&ans>=0&&ans<=25){visual=items(["🍎","⭐","🐟","🟡"][i%4],ans);prompt="How many objects are there in this practice picture?";}
+ else if(ans!==null){visual=row([chip(ans-2),chip(ans-1),chip("?")]);prompt="Which number comes next?";}
+ else if(/^[A-Z]$/.test(String(q.answer||""))&&q.answer.length===1&&q.answer!=="A"&&q.answer!=="B"&&q.answer!=="C"&&q.answer!=="D"){visual=pattern(q.answer,i);prompt="What letter comes next?";}
+ else if(examType(testId)==="choice"){const selected="ABCD".indexOf(String(q.answer));visual=row(["A","B","C","D"].map((letter,j)=>chip((j===selected?"⭐ ":"○ ")+letter)));prompt="Which labeled shape has the star?";}
+ else {visual=row([chip("🔎"),chip("?")]);note="Illustrative reasoning prompt — original diagram unavailable.";}
+}
+return visual?{html:visual,prompt,adapted,options:null,note}:null;
 }
 window.MockIllustrations={render};
 })();
