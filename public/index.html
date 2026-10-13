@@ -96,7 +96,7 @@ try{const x=JSON.parse(localStorage.getItem(OLD_KEY));if(x&&x.problems&&x.proble
 return{mode:"sum20",checked:false,problems:makeProblems("sum20")};
 }
 let state=load(),active=-1,celebrationTimer=null;
-const winSound=new Audio("https://d1p1y5pyxk2k6i.cloudfront.net/4afzt%2Ffile%2F211d5d815383eecfc1660a9b95c72509_5ba6794e4a4d8f48e70a4bbafdff7a4d.mp3?response-content-disposition=inline%3Bfilename%3D%22211d5d815383eecfc1660a9b95c72509_5ba6794e4a4d8f48e70a4bbafdff7a4d.mp3%22%3B&response-content-type=audio%2Fmpeg&Expires=1791891210&Signature=UiazDcYX~50-09A2sFo6wLmtjNmA-LlQUHWPpFOVKzGuFF-k4KA6Z2jALNIeKJxE1y0tqrOs9rMFtRiAjttQYF55mVIjR0DO99lWgMh37r3KZdKgXXeiZ5xjrj~cj9WfJeXSzjNq1ziHoNMK9hfl4VCIBqet8t3N3TXKZao2~AkbCNIWA8Pahq4-iAo0CSwkvFUZgx1-XlpIV1KxAoNbxwjzdX85MrdYnu8PMssVdztWTZA9LUzBjZZAxIbHyqwhPfuxsg-jh82V8~d8vqlHRt6h~V-9gJrjLwgzpU4oBvFtGSDkTqc1itP29eOPRr8HLSXvYMzDlXKuyt3EqJbMfA__&Key-Pair-Id=APKAJT5WQLLEOADKLHBQ");winSound.preload="none";
+const winSound=new Audio("/assets/minions-cry.mp3");winSound.preload="none";
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}};
 const DAILY_KEY="little-math-garden-daily-v1";
 function dateKey(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
