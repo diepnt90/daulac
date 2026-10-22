@@ -133,16 +133,14 @@ const RUNG_CHUONG_VANG_BANK=[{"set":1,"n":1,"q":"Khi gặp người lớn tuổi
 window.rungChuongVangState={set:1,answers:{},checked:{}};
 function renderBellQuiz(){
  const qstate=window.rungChuongVangState;
- const items=RUNG_CHUONG_VANG_BANK.filter(q=>q.set===qstate.set);
+ const items=RUNG_CHUONG_VANG_BANK;
  const section=$("mocktest-section");
- section.innerHTML='<div class="mock-header"><div><p class="eyebrow">BỘ CÂU HỎI TƯƠNG TÁC</p><h2>🔔 Rung Chuông Vàng</h2><p>Chọn đáp án và bấm “Kiểm tra” ngay trên từng thẻ câu hỏi.</p></div><div class="mock-header-side"><select class="mock-picker" id="bell-set"><option value="1">Bộ số 1 · 18 câu</option><option value="2">Bộ số 2 · 20 câu</option></select><div class="mock-score"><strong id="bell-score">0 / '+items.length+'</strong><span>câu trả lời đúng</span></div></div></div><div class="mock-grid" id="bell-grid"></div><div class="actions"><span class="hint" id="bell-summary">Chưa kiểm tra câu nào.</span><button class="secondary" id="bell-reset" type="button">↻ Làm lại bộ này</button></div>';
- const picker=$("bell-set");picker.value=String(qstate.set);
- picker.onchange=()=>{qstate.set=Number(picker.value);qstate.answers={};qstate.checked={};renderBellQuiz();};
+ section.innerHTML='<div class="mock-header"><div><p class="eyebrow">BỘ CÂU HỎI TƯƠNG TÁC</p><h2>🔔 Rung Chuông Vàng</h2><p>Tất cả câu hỏi hiển thị cùng lúc. Chọn đáp án và kiểm tra ngay trên từng thẻ.</p></div><div class="mock-header-side"><div class="mock-score"><strong id="bell-score">0 / '+items.length+'</strong><span>câu trả lời đúng</span></div></div></div><div class="mock-grid" id="bell-grid"></div><div class="actions"><span class="hint" id="bell-summary">Chưa kiểm tra câu nào.</span><button class="secondary" id="bell-reset" type="button">↻ Làm lại tất cả</button></div>';
  const grid=$("bell-grid");
  items.forEach((q,index)=>{
   const key=q.set+"-"+q.n, chosen=qstate.answers[key], checked=!!qstate.checked[key];
   const card=document.createElement("article");card.className="mock-card"+(checked?(chosen===q.answer?" passed":" failed"):"");
-  const head=document.createElement("div");head.className="mock-card-top";head.innerHTML='<span>CÂU '+String(q.n).padStart(2,"0")+'</span><small>'+q.options.length+' lựa chọn</small>';card.append(head);
+  const head=document.createElement("div");head.className="mock-card-top";head.innerHTML='<span>CÂU '+(index+1)+' · BỘ '+q.set+'</span><small>'+q.options.length+' lựa chọn</small>';card.append(head);
   const title=document.createElement("h3");title.textContent=q.q;card.append(title);
   const options=document.createElement("div");options.className="mock-choices";
   q.options.forEach((option,i)=>{const b=document.createElement("button");b.type="button";b.className="mock-option"+(chosen===i?" selected":"");b.innerHTML='<b>'+String.fromCharCode(65+i)+'.</b> '+option;
@@ -150,7 +148,7 @@ function renderBellQuiz(){
    b.onclick=()=>{if(qstate.checked[key])return;qstate.answers[key]=i;renderBellQuiz();};options.append(b);});
   card.append(options);
   const foot=document.createElement("div");foot.className="mock-foot";
-  const status=document.createElement("span");status.textContent=checked?(chosen===q.answer?"✓ Chính xác!":"✕ Chưa đúng"): "Chọn một đáp án";foot.append(status);
+  const status=document.createElement("span");status.textContent=checked?(chosen===q.answer?"✓ Chính xác!":"✕ Chưa đúng"):"Chọn một đáp án";foot.append(status);
   const check=document.createElement("button");check.type="button";check.className="mock-check";check.textContent=checked?"Đã kiểm tra":"Kiểm tra đáp án";check.disabled=chosen===undefined||checked;
   check.onclick=()=>{qstate.checked[key]=true;renderBellQuiz();};foot.append(check);card.append(foot);
   if(checked&&chosen!==q.answer){const correct=document.createElement("p");correct.className="mock-source-note";correct.textContent="Đáp án đúng: "+String.fromCharCode(65+q.answer)+". "+q.options[q.answer];card.append(correct);}
