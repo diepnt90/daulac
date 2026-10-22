@@ -140,7 +140,7 @@ function renderBellQuiz(){
  items.forEach((q,index)=>{
   const key=q.set+"-"+q.n, chosen=qstate.answers[key], checked=!!qstate.checked[key];
   const card=document.createElement("article");card.className="mock-card"+(checked?(chosen===q.answer?" passed":" failed"):"");
-  const head=document.createElement("div");head.className="mock-card-top";head.innerHTML='<span>CÂU '+(index+1)+' · BỘ '+q.set+'</span><small>'+q.options.length+' lựa chọn</small>';card.append(head);
+  const head=document.createElement("div");head.className="mock-card-top";head.innerHTML='<span>CÂU '+(index+1)+'</span><small>'+q.options.length+' lựa chọn</small>';card.append(head);
   const title=document.createElement("h3");title.textContent=q.q;card.append(title);
   const options=document.createElement("div");options.className="mock-choices";
   q.options.forEach((option,i)=>{const b=document.createElement("button");b.type="button";b.className="mock-option"+(chosen===i?" selected":"");b.innerHTML='<b>'+String.fromCharCode(65+i)+'.</b> '+option;
