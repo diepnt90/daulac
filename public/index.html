@@ -166,7 +166,7 @@ function render(){
 const bell=state.mode==="rungChuongVang";
 const mock=state.mode==="mocktest";
 $("mocktest-section").hidden=!(mock||bell);
-if(bell){renderBellQuiz();menu();save();return;}
+if(bell){for(const id of ["regular-progress","regular-section-title","cards","regular-actions","results"])$(id).hidden=true;renderBellQuiz();menu();save();return;}
 for(const id of ["regular-progress","regular-section-title","cards","regular-actions","results"])$(id).hidden=mock;
 if(mock){menu();window.MathMocktest.render();save();return;}
 const done=state.problems.filter(filled).length,right=state.problems.filter(p=>p.status==="correct").length,wrong=state.problems.filter(p=>p.status==="wrong").length;
