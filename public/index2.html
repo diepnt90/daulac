@@ -173,21 +173,8 @@ textarea{width:100%;min-height:300px;border:1px solid var(--line);background:var
       <h2>Dạng bài toán</h2>
       <p class="note">Chọn dạng bài toán hiển thị, giống mục chọn ở trang chính math.nomzom.lol. Chọn xong, bài học tiếp theo sẽ dùng dạng này.</p>
       <div class="form"><label>Dạng bài toán<select id="mathType">
-<option value="add10">Add numbers up to 10</option>
-<option value="sum10">Addition within 10</option>
-<option value="sum20" selected>Addition under 20</option>
-<option value="sub10">Subtraction within 10</option>
-<option value="sub20">Subtraction within 20</option>
-<option value="add20">Addition within 20</option>
-<option value="missing10">Find the missing number · 10</option>
-<option value="missingAdd20">Missing number · Addition 20</option>
-<option value="missingSub10">Missing number · Subtraction 10</option>
-<option value="missingSub20">Missing number · Subtraction 20</option>
-<option value="bridgeAdd">Addition across 10</option>
-<option value="bridgeSub">Subtraction across 10</option>
-<option value="doubles">Doubles &amp; near doubles</option>
-<option value="mixed20">Mixed + and − within 20</option>
-<option value="missingMixed20">Mixed missing numbers · 20</option>
+<option value="addMix" selected>Add (0–9) + (10–20)</option>
+<option value="subMix">Subtract (20–30) − (0–10)</option>
 </select></label></div>
     </div>
     <div class="panel">
@@ -228,30 +215,17 @@ textarea{width:100%;min-height:300px;border:1px solid var(--line);background:var
 'use strict';
 var KEY='behocvui_tv_toan_v1';
 var MATH_TYPES=[
-{id:'add10',label:'Add numbers up to 10',note:'Both numbers 1–9 · sum up to 18',op:'+',limit:20},
-{id:'sum10',label:'Addition within 10',note:'The total is 10 or less',op:'+',limit:10},
-{id:'sum20',label:'Addition under 20',note:'The total is less than 20',op:'+',limit:19},
-{id:'sub10',label:'Subtraction within 10',note:'Positive answers · numbers up to 10',op:'−',limit:10},
-{id:'sub20',label:'Subtraction within 20',note:'Positive answers · numbers up to 20',op:'−',limit:20},
-{id:'add20',label:'Addition within 20',note:'The total is 20 or less',op:'+',limit:20},
-{id:'missing10',label:'Find the missing number · 10',note:'Fill the blank in an addition',op:'+',limit:10},
-{id:'missingAdd20',label:'Missing number · Addition 20',note:'? + 7 = 15 or 8 + ? = 15',op:'+',limit:20},
-{id:'missingSub10',label:'Missing number · Subtraction 10',note:'? − 3 = 5 or 8 − ? = 5',op:'−',limit:10},
-{id:'missingSub20',label:'Missing number · Subtraction 20',note:'? − 6 = 9 or 15 − ? = 9',op:'−',limit:20},
-{id:'bridgeAdd',label:'Addition across 10',note:'Add two numbers and cross 10',op:'+',limit:20},
-{id:'bridgeSub',label:'Subtraction across 10',note:'Subtract from 11–20 and cross 10',op:'−',limit:20},
-{id:'doubles',label:'Doubles & near doubles',note:'6 + 6 or 7 + 8',op:'+',limit:20},
-{id:'mixed20',label:'Mixed + and − within 20',note:'A little challenge!',op:'mixed',limit:20},
-{id:'missingMixed20',label:'Mixed missing numbers · 20',note:'Find the missing number in + or −',op:'mixed',limit:20}
+{id:'addMix',label:'Add (0–9) + (10–20)',note:'A number 0–9 plus a number 10–20',op:'+',aMin:0,aMax:9,bMin:10,bMax:20,swap:true},
+{id:'subMix',label:'Subtract (20–30) − (0–10)',note:'A number 20–30 minus a number 0–10',op:'−',aMin:20,aMax:30,bMin:0,bMax:10}
 ];
-function mathTypeById(id){ for(var i=0;i<MATH_TYPES.length;i++){ if(MATH_TYPES[i].id===id) return MATH_TYPES[i]; } return MATH_TYPES[2]; }
+function mathTypeById(id){ for(var i=0;i<MATH_TYPES.length;i++){ if(MATH_TYPES[i].id===id) return MATH_TYPES[i]; } return MATH_TYPES[0]; }
 var GROUPS={toan:{name:'Bài toán'},mix:{get name(){ return 'bài toán'; }}};
 var GROUP_ORDER=['toan'];
 function groupOn(g){ return true; }
 function activeOrder(){ return ['toan']; }
 
 function defaultSettings(){
-  return {ver:2, perSession:20, lessonMin:3, daily:80, perLesson:10, warn1:120, warn2:30, parentMin:60, pin:'1234', motion:true, voiceOn:true, mathType:'sum20'}
+  return {ver:2, perSession:20, lessonMin:3, daily:80, perLesson:10, warn1:120, warn2:30, parentMin:60, pin:'1234', motion:true, voiceOn:true, mathType:'addMix'}
 }
 
 /* ---------- Giọng đọc Offline (MP3 Hoài My + dự phòng TTS) ---------- */
@@ -365,26 +339,13 @@ function shuffle(a){ a=a.slice(); for(var i=a.length-1;i>0;i--){var j=Math.floor
 
 /* ---------- Sinh câu hỏi ---------- */
 function mathPool(typeId){
-  var mode=mathTypeById(typeId),pool=[],seen={};
-  for(var a=0;a<=20;a++)for(var b=0;b<=20;b++){
-    var op=mode.op;
-    if(op==='mixed') op=(a+b)%2===0?'+':'−';
-    var isAdd=op==='+', limit=mode.limit||20;
-    if(isAdd&&!(a>=1&&b>=1&&a+b<=limit)) continue;
-    if(!isAdd&&!(a<=limit&&a>b&&b>=1)) continue;
-    if(typeId==='add10'&&!(a<=9&&b<=9)) continue;
-    if(typeId==='sum20'&&a+b>=20) continue;
-    if(typeId==='bridgeAdd'&&!(a<10&&b<10&&a+b>10)) continue;
-    if(typeId==='bridgeSub'&&!(a>=11&&a<=20&&a-b<10)) continue;
-    if(typeId==='doubles'&&Math.abs(a-b)>1) continue;
-    if(typeId==='missing10'&&a+b>10) continue;
-    if(typeId==='missingSub10'&&a>10) continue;
-    var hasMissing=['missing10','missingAdd20','missingSub10','missingSub20','missingMixed20'].indexOf(typeId)>=0;
-    var missing=hasMissing?((a+b)%2===0?'left':'right'):null;
-    var key=isAdd&&!hasMissing?[a,b].sort(function(x,y){return x-y;}).join(','):a+','+b+','+missing+','+op;
+  var found=mathTypeById(typeId), mode=(typeof found.aMin==='number')?found:mathTypeById('addMix'), pool=[], seen={};
+  for(var a=mode.aMin;a<=mode.aMax;a++)for(var b=mode.bMin;b<=mode.bMax;b++){
+    var key=mode.op==='+'?[a,b].sort(function(x,y){return x-y;}).join(','):a+','+b;
     if(seen[key]) continue; seen[key]=1;
-    pool.push({a:a,b:b,op:op,missing:missing});
+    pool.push({a:a,b:b,op:mode.op,missing:null});
   }
+  if(mode.swap) pool.forEach(function(p){ if(Math.random()<0.5){ var t=p.a; p.a=p.b; p.b=t; } });
   return shuffle(pool);
 }
 function mathDistractors(v){
@@ -393,12 +354,12 @@ function mathDistractors(v){
   var out=[];
   c.forEach(function(x){ if(x>=0&&x!==v&&out.indexOf(x)<0) out.push(x); });
   out=shuffle(out).slice(0,2);
-  while(out.length<2){ var r=rnd(0,20); if(r!==v&&out.indexOf(r)<0) out.push(r); }
+  while(out.length<2){ var r=rnd(0,30); if(r!==v&&out.indexOf(r)<0) out.push(r); }
   return out.map(String);
 }
 function makeQuestions(group,n){
   if(group!=='toan') return [];
-  var pool=mathPool(S().mathType||'sum20'), qs=[];
+  var pool=mathPool(S().mathType||'addMix'), qs=[];
   for(var i=0;i<n&&i<pool.length;i++){
     var p=pool[i], total=p.op==='−'?p.a-p.b:p.a+p.b;
     var correct=p.missing==='left'?p.a:p.missing==='right'?p.b:total;
@@ -681,7 +642,7 @@ function renderParent(){
           '<span style="font-size:28px;font-weight:800">Cần luyện thêm</span>'+
           '<span style="font-size:40px;font-weight:900;letter-spacing:4px">'+(needList.length?esc(needList.join('  ')):'—')+'</span>'+
           '<span style="color:#4E6466">Bỏ qua: '+c.bo_qua+' · Nghỉ giữa chừng: '+c.nghi+'</span>'+
-          '<span style="color:#4E6466">Dạng bài: '+esc(mathTypeById(S().mathType||'sum20').label)+'</span>'+
+          '<span style="color:#4E6466">Dạng bài: '+esc(mathTypeById(S().mathType||'addMix').label)+'</span>'+
           (g?'<span style="font-weight:900;color:'+(g.service&&g.youtube?'#2C6E69':'#C9452F')+'">Khóa YouTube: '+(!g.youtube?'không tìm thấy app YouTube':g.service?'đang bật (cấp 1 – Trợ năng)':'CHƯA BẬT – chọn “Bật quyền khóa YouTube”')+'</span>':'')+
         '</div></div></div></div>';
 }
@@ -934,7 +895,7 @@ document.getElementById('resetday').addEventListener('click',function(){ var u=U
 /* ---------- Tab Bài tập (Bài toán) ---------- */
 function renderEditor(){
   var el=document.getElementById('mathTypeCurrent');
-  if(el) el.textContent=mathTypeById(S().mathType||'sum20').label;
+  if(el) el.textContent=mathTypeById(S().mathType||'addMix').label;
 }
 document.querySelectorAll('[data-try]').forEach(function(b){ b.addEventListener('click',function(){ setTab('sim'); startLesson(b.getAttribute('data-try'),true); }); });
 
@@ -946,7 +907,7 @@ function renderSettings(){
   var pi=document.getElementById('pinInput'), pm=document.getElementById('pinMsg');
   if(pi) pi.value=S().pin;
   if(pm) pm.textContent='';
-  var mt=document.getElementById('mathType'); if(mt) mt.value=S().mathType||'sum20';
+  var mt=document.getElementById('mathType'); if(mt) mt.value=S().mathType||'addMix';
   document.getElementById('motion').checked=S().motion!==false;
   document.getElementById('voiceOn').checked=S().voiceOn!==false;
 }
