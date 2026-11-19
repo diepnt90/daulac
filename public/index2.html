@@ -349,13 +349,11 @@ function mathPool(typeId){
   return shuffle(pool);
 }
 function mathDistractors(v){
-  var c=[v+1,v-1,v+2,v-2,v+10,v-10,v+11,v-11];
-  if(v>=10&&v%10!==0) c.push(+(String(v)[1]+String(v)[0]));
-  var out=[];
-  c.forEach(function(x){ if(x>=0&&x!==v&&out.indexOf(x)<0) out.push(x); });
-  out=shuffle(out).slice(0,2);
-  while(out.length<2){ var r=rnd(0,30); if(r!==v&&out.indexOf(r)<0) out.push(r); }
-  return out.map(String);
+  /* Đáp án gây nhiễu: bộ 3 số liên tiếp chứa kết quả, nhưng kết quả không phải lúc nào cũng ở giữa.
+     Vd kết quả 15: có thể là 14,15,16 hoặc 15,16,17 hoặc 13,14,15 — chọn ngẫu nhiên 1 trong 3 kiểu. */
+  var pairs=[[v-2,v-1],[v-1,v+1],[v+1,v+2]];
+  var valid=pairs.filter(function(w){ return w[0]>=0; });
+  return valid[Math.floor(Math.random()*valid.length)].map(String);
 }
 function makeQuestions(group,n){
   if(group!=='toan') return [];
