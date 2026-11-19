@@ -607,7 +607,7 @@ function record(r){
 }
 function finishLesson(){
   var u=U(), L=sim.lesson;
-  if(!L.single){ u.lessonsDone++; u.lessonRequired=false; L.qs.slice(0,L.i).forEach(function(q){ if(u.groupsDone.indexOf(q.group)<0) u.groupsDone.push(q.group); }); }
+  if(!L.single){ u.lessonsDone++; u.lessonRequired=false; u.sessionSec=0; /* Làm xong bài = bắt đầu lượt xem mới: reset giờ lượt để lượt sau đủ số phút đã cài (trước đây sessionSec cũ còn kẹt, vd đã xem dở 13/15 phút thì chỉ còn 2 phút) */ L.qs.slice(0,L.i).forEach(function(q){ if(u.groupsDone.indexOf(q.group)<0) u.groupsDone.push(q.group); }); }
   go('done');
 }
 
@@ -674,7 +674,7 @@ function applyWatched(sec){
   var u=U(), s=S();
   u.sessionSec+=sec; u.watchedSec+=sec;
   if(s.daily*60-u.watchedSec<=1){ u.watchedSec=s.daily*60; u.sessionsDone=Math.min(maxSessions(),u.sessionsDone+(u.sessionSec>0?1:0)); u.sessionSec=0; }
-  else if(sessionLeft()<=1){ u.sessionsDone++; u.sessionSec=0; u.lessonRequired=true; }
+  else if(sessionLeft()<=10){ u.sessionsDone++; u.sessionSec=0; u.lessonRequired=true; } /* Ngưỡng 10 giây (trước là 1): số giây native trả về hay bị làm tròn/thiếu vài giây cuối, để 1 giây rất dễ trượt reset */
   save();
 }
 /* Gọi khi app quay lại màn hình (từ YouTube, sau khi bật TV, hoặc lúc mở app) */
@@ -922,7 +922,7 @@ document.getElementById('savePinBtn').addEventListener('click',function(){
 document.getElementById('setform').addEventListener('change',function(e){
   var k=e.target.getAttribute('data-s'); if(!k) return;
   if(k==='pin'){ var v=e.target.value.replace(/\D/g,''); if(v.length>=4&&v.length<=6) S().pin=v; else e.target.value=S().pin; }
-  else { var fd=FIELDS.find(function(x){return x[0]===k;}); var n=parseInt(e.target.value,10); if(isNaN(n)) n=S()[k]; n=Math.max(fd[2],Math.min(fd[3],n)); S()[k]=n; e.target.value=n; }
+  else { var fd=FIELDS.find(function(x){return x[0]===k;}); var n=parseInt(e.target.value,10); if(isNaN(n)) n=S()[k]; n=Math.max(fd[2],Math.min(fd[3],n)); var oldV=S()[k]; S()[k]=n; e.target.value=n; if(k==='perSession'&&n!==oldV) U().sessionSec=0; /* Đổi phút mỗi lượt thì tính lượt mới từ đầu, tránh sessionSec cũ không khớp mức mới */ }
   save();
 });
 document.getElementById('mathType').addEventListener('change',function(e){ S().mathType=e.target.value; save(); renderEditor(); });
@@ -941,12 +941,12 @@ document.getElementById('load').addEventListener('click',function(){
   try{
     var d=JSON.parse(jsonEl.value); if(!d||!d.settings) throw new Error('Thiếu settings');
     var s=defaultSettings(); for(var k in s){ if(d.settings[k]===undefined) d.settings[k]=s[k]; }
-    DB.settings=d.settings; save(); outMsg.textContent='Đã nạp cài đặt';
+    var oldPer=S().perSession; DB.settings=d.settings; if(d.settings.perSession!==oldPer) U().sessionSec=0; save(); outMsg.textContent='Đã nạp cài đặt';
   }catch(e){ outMsg.textContent='Không nạp được: '+e.message; }
 });
 document.getElementById('defaults').addEventListener('click',function(){
   if(!confirm('Khôi phục cài đặt mặc định?')) return;
-  DB.settings=defaultSettings(); save(); renderJson(); outMsg.textContent='Đã khôi phục mặc định';
+  var oldPer=S().perSession; DB.settings=defaultSettings(); if(DB.settings.perSession!==oldPer) U().sessionSec=0; save(); renderJson(); outMsg.textContent='Đã khôi phục mặc định';
 });
 
 /* ---------- Tabs ---------- */
